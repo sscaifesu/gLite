@@ -7,9 +7,13 @@ const draco3d = require('draco3dgltf');
 const { KHRONOS_EXTENSIONS } = require('@gltf-transform/extensions');
 const { draco, textureCompress, dedup, prune } = require('@gltf-transform/functions');
 const fs = require('fs');
+const bodyParser = require('body-parser');
 
 const app = express();
 const port = 3000;
+
+// 使用 body-parser 中间件
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // 设置 Multer 存储配置
 const storage = multer.diskStorage({
@@ -31,6 +35,7 @@ app.post('/compress', upload.single('glbFile'), async (req, res) => {
   try {
     const inputPath = req.file.path;
     const outputPath = 'compressed/' + req.file.filename;
+    const compressionLevel = parseInt(req.body.compressionLevel) || 5;
 
     // 确保输出目录存在
     if (!fs.existsSync('compressed')) {
@@ -49,22 +54,25 @@ app.post('/compress', upload.single('glbFile'), async (req, res) => {
 
     const document = await io.read(inputPath);
 
+    // 根据压缩等级调整参数
+    const quantizationLevel = Math.max(8, 14 - compressionLevel);
+
     await document.transform(
       // Draco 压缩
       draco({
         method: 'edgebreaker',
-        quantizePosition: 14,
-        quantizeNormal: 10,
-        quantizeTexcoord: 12,
+        quantizePosition: quantizationLevel,
+        quantizeNormal: Math.max(8, quantizationLevel - 2),
+        quantizeTexcoord: Math.max(8, quantizationLevel - 2),
         quantizeColor: 8,
-        quantizeGeneric: 12,
+        quantizeGeneric: 8,
       }),
-      // 纹理��缩
+      // 纹理压缩
       textureCompress({
         encoder: require('sharp'),
         targetFormat: 'webp',
-        quality: 90,
-        maxTextureSize: 1024 // 根据需要调整
+        quality: Math.max(60, 100 - compressionLevel * 4),
+        maxTextureSize: 2048 >> (compressionLevel >> 1) // 根据压缩等级调整最大纹理大小
       }),
       // 删除重复数据
       dedup(),

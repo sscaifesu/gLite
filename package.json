@@ -3,6 +3,7 @@
     "@gltf-transform/core": "^4.0.8",
     "@gltf-transform/extensions": "^4.0.8",
     "@gltf-transform/functions": "^4.0.8",
+    "body-parser": "^1.20.3",
     "draco3dgltf": "^1.5.7",
     "express": "^4.21.0",
     "multer": "^1.4.5-lts.1",

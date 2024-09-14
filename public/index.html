@@ -3,13 +3,73 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GLB 文件压缩器</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <h1>GLB 文件压缩器</h1>
-  <form action="/compress" method="post" enctype="multipart/form-data">
-    <input type="file" name="glbFile" accept=".glb" required>
-    <button type="submit">上传并压缩</button>
-  </form>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-lg shadow-md w-96">
+    <h1 class="text-2xl font-bold mb-6 text-center">GLB 文件压缩器</h1>
+    <form id="uploadForm" class="space-y-4">
+      <div class="flex items-center justify-center w-full">
+        <label for="glbFile" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+          <div class="flex flex-col items-center justify-center pt-5 pb-6">
+            <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">点击上传</span> 或拖放文件</p>
+            <p class="text-xs text-gray-500">GLB (最大 100MB)</p>
+          </div>
+          <input id="glbFile" type="file" name="glbFile" accept=".glb" class="hidden" required />
+        </label>
+      </div>
+      <div>
+        <label for="compressionLevel" class="block text-sm font-medium text-gray-700 mb-1">压缩等级：<span id="compressionLevelValue">5</span></label>
+        <input type="range" id="compressionLevel" name="compressionLevel" min="1" max="10" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+      </div>
+      <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        上传并压缩
+      </button>
+    </form>
+    <div id="result" class="mt-4 text-center hidden">
+      <p class="text-green-500 font-semibold">压缩完成！</p>
+      <a id="downloadLink" href="#" class="text-blue-500 hover:text-blue-600">下载压缩后的文件</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const resultDiv = document.getElementById('result');
+    const downloadLink = document.getElementById('downloadLink');
+    const compressionLevel = document.getElementById('compressionLevel');
+    const compressionLevelValue = document.getElementById('compressionLevelValue');
+
+    compressionLevel.addEventListener('input', function() {
+      compressionLevelValue.textContent = this.value;
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      
+      try {
+        const response = await fetch('/compress', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.download = 'compressed.glb';
+          resultDiv.classList.remove('hidden');
+        } else {
+          alert('压缩失败，请重试。');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('发生错误，请重试。');
+      }
+    });
+  </script>
 </body>
 </html>

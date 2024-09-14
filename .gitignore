@@ -1,0 +1,4 @@
+node_modules/
+uploads/
+compressed/
+.DS_Store

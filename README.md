@@ -5,9 +5,10 @@
 # 功能特点
 
 1. 支持上传 glTF 文件并压缩导出。
-2. 支持上传 png、jpg、jpeg 等图片文件，并进行压缩导出。
-3. 支持上传 mp4、mov 等视频文件，并进行压缩导出。
-4. 支持上传 obj、fbx 等模型文件，并进行压缩导出。
+
+# Todo
+
+1. 支持上传 obj、fbx 等模型文件，并进行压缩导出。
 
 # 使用方法
 
@@ -20,11 +21,11 @@ npm install
 2. 启动服务
 
 ```bash
-npm run dev
+node server.js
 ```
 
 3. 访问 http://localhost:3000 即可使用。
 
 # 运行时截图
 
-![运行时截图](./public/info.png)
+![运行时截图](./public/gLite-Day.png)![运行时截图](./public/gLite-Night.png)

@@ -8,12 +8,21 @@ const { KHRONOS_EXTENSIONS } = require('@gltf-transform/extensions');
 const { draco, textureCompress, dedup, prune } = require('@gltf-transform/functions');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const sanitizeHtml = require('sanitize-html');
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = 3000;
 
 // 使用 body-parser 中间件
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// 使用 cookie-parser 中间件
+app.use(cookieParser());
+
+// 设置 CSRF 保护
+const csrfProtection = csrf({ cookie: true });
 
 // 设置 Multer 存储配置
 const storage = multer.diskStorage({
@@ -47,7 +56,7 @@ app.use(express.static('public'));
 app.use('/compressed', express.static('compressed'));
 
 // 文件上传和压缩处理路由
-app.post('/compress', (req, res) => {
+app.post('/compress', csrfProtection, (req, res) => {
   upload(req, res, async function(err) {
     if (err) {
       // Multer 错误，例如文件大小超出限制
@@ -58,10 +67,16 @@ app.post('/compress', (req, res) => {
     }
 
     const inputPath = req.file.path;
-    const originalFileName = req.file.originalname;
-    const compressedFileName = originalFileName.replace('.glb', '-compressed.glb');
+    const originalFileName = sanitizeHtml(req.file.originalname, {
+      allowedTags: [],
+      allowedAttributes: {}
+    });
+    const compressedFileName = sanitizeHtml(originalFileName.replace('.glb', '-compressed.glb'), {
+      allowedTags: [],
+      allowedAttributes: {}
+    });
     const outputPath = path.join('compressed', compressedFileName);
-    const compressionLevel = parseInt(req.body.compressionLevel) || 5;
+    const compressionLevel = Math.min(Math.max(parseInt(req.body.compressionLevel) || 5, 1), 10);
 
     // 设置 SSE 头
     res.writeHead(200, {
@@ -97,7 +112,7 @@ app.post('/compress', (req, res) => {
         console.log('Sending progress update:', message);
         res.write(message);
         
-        // 使用 setImmediate 来确保数据被发送
+        // 使用 setImmediate 来确数据被发送
         setImmediate(() => {
           res.flushHeaders();
         });
@@ -184,8 +199,17 @@ app.post('/compress', (req, res) => {
 
 // 添加一个新的路由来处理文件下载
 app.get('/download/:filename', (req, res) => {
-  const filename = req.params.filename;
+  const filename = sanitizeHtml(req.params.filename, {
+    allowedTags: [],
+    allowedAttributes: {}
+  });
   const filePath = path.join(__dirname, 'compressed', filename);
+  
+  // 验证文件路径，确保不会访问到预期目录之外的文件
+  if (!filePath.startsWith(path.join(__dirname, 'compressed'))) {
+    return res.status(403).send('访问被拒绝');
+  }
+  
   console.log('Attempting to download file:', filePath);
   res.download(filePath, filename, (err) => {
     if (err) {
@@ -198,4 +222,9 @@ app.get('/download/:filename', (req, res) => {
 // 启动服务器
 app.listen(port, () => {
   console.log(`服务器已启动：http://localhost:${port}`);
+});
+
+// 添加一个路由来提供 CSRF 令牌
+app.get('/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
 });

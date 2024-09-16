@@ -1,4 +1,4 @@
 node_modules/
-uploads/
-compressed/
+uploads/*.glb
+compressed/*.glb
 .DS_Store

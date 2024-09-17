@@ -50,7 +50,11 @@ node server.js
 注意：如果需要持久化存储上传和压缩的文件，请使用以下命令运行容器：
 
 ```
-docker run -p 3000:3000 -v /path/on/host/uploads:/usr/src/app/uploads -v /path/on/host/compressed:/usr/src/app/compressed -d glite
+docker run --name=glite \
+-p 3000:3000 \
+-v /path/on/host/uploads:/usr/src/app/uploads \
+-v /path/on/host/compressed:/usr/src/app/compressed \
+-d glite
 ```
 
 如果你不想自己构建，也可以直接使用我构建好的镜像：
